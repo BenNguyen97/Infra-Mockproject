@@ -49,5 +49,5 @@ variable "instance_type" {
 # IP Address for Security Group
 variable "my_ip"{
   description = "Your IP address in CIDR format"
-  default     = "0.0.0.0/0" # Thay bằng IP thực tế của bạn
+  default     = "0.0.0.0/0" # Thay bằng IP thực tế 
 }

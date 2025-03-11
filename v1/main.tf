@@ -18,7 +18,7 @@ data "http" "my_ip" {
 
 # VPC
 resource "aws_vpc" "main_vpc" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
   tags = {
@@ -59,7 +59,6 @@ resource "aws_internet_gateway" "main_igw" {
 # Route Table
 resource "aws_route_table" "main_route_table" {
   vpc_id = aws_vpc.main_vpc.id
-
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.main_igw.id
@@ -117,7 +116,7 @@ resource "aws_security_group" "mongo_sg" {
     from_port   = 27017
     to_port     = 27017
     protocol    = "tcp"
-    security_groups = [aws_security_group.eks_sg.id]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
