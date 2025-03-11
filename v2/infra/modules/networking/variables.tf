@@ -6,3 +6,7 @@ variable "public_subnet_az" {}
 variable "private_subnet_az" {}
 variable "public_sn_name" {}
 variable "private_sn_name" {}
+variable "igw_name" {}
+variable "eip_name" {}
+variable "nat_gw_name" {}
+variable "eks_sg_ids" {}

@@ -14,7 +14,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region = "ap-southeast-1"
 }
 
 # Networking
@@ -22,10 +22,20 @@ module "networking" {
   source             = "./modules/networking"
   vpc_cidr           = var.vpc_cidr
   vpc_name           = var.vpc_name
+  
   public_subnet_cidr = var.public_subnet_cidr
-  private_subnet_cidr = var.private_subnet_cidr
   public_subnet_az   = var.public_subnet_az
+  public_sn_name     = var.public_sn_name
+
+  private_subnet_cidr = var.private_subnet_cidr
   private_subnet_az  = var.private_subnet_az
+  private_sn_name    = var.private_sn_name
+  
+
+  igw_name           = var.igw_name
+  eip_name           = var.eip_name
+  nat_gw_name        = var.nat_gw_name
+  eks_sg_ids         = var.eks_sg_ids
 }
 
 # EKS Cluster

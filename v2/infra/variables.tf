@@ -30,6 +30,23 @@ variable "private_sn_name" {
   default = "luan_private_sn"
 }
 
+variable "igw_name" {
+  default = "luan_igw"
+}
+
+variable "eip_name" {
+  default = "luan_eip"
+}
+
+variable "nat_gw_name" {
+  default = "luan_nat_gw"
+}
+
+variable "eks_sg_ids" {
+  description = "List of security group IDs for EKS worker nodes"
+  type        = list(string)
+}
+
 variable "cluster_name" {
   default = "my-eks-cluster"
 }
