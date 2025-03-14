@@ -1,3 +1,4 @@
+
 terraform {
   required_providers {
     aws = {
@@ -21,39 +22,31 @@ resource "aws_vpc" "main_vpc" {
   cidr_block = var.vpc_cidr
   enable_dns_support   = true
   enable_dns_hostnames = true
-  tags = {
-    Name = "Luan-Main-VPC"
-  }
+  tags = { Name = "Luan-Eks-VPC" }
 }
 
 # Subnet 1
-resource "aws_subnet" "main_subnet_1" {
+resource "aws_subnet" "public-sn-1" {
   vpc_id                  = aws_vpc.main_vpc.id
   cidr_block              = "10.0.1.0/24"
   availability_zone       = "ap-southeast-1a"
   map_public_ip_on_launch = true
-  tags = {
-    Name = "Luan-Main-Subnet-1"
-  }
+  tags = { Name = "Luan-public-subnet-1" }
 }
 
 # Subnet 2 
-resource "aws_subnet" "main_subnet_2" {
+resource "aws_subnet" "public-sn-2" {
   vpc_id                  = aws_vpc.main_vpc.id
   cidr_block              = "10.0.2.0/24"
   availability_zone       = "ap-southeast-1b"
   map_public_ip_on_launch = true
-  tags = {
-    Name = "Luan-Main-Subnet-2"
-  }
+  tags = { Name = "Luan-public-subnet-2" }
 }
 
 # Internet Gateway
 resource "aws_internet_gateway" "main_igw" {
   vpc_id = aws_vpc.main_vpc.id
-  tags = {
-    Name = "Luan-Main-IGW"
-  }
+  tags = { Name = "Luan-Main-IGW" }
 }
 
 # Route Table
@@ -67,12 +60,12 @@ resource "aws_route_table" "main_route_table" {
 
 # Route Table Association
 resource "aws_route_table_association" "main_route_assoc_1" {
-  subnet_id      = aws_subnet.main_subnet_1.id
+  subnet_id      = aws_subnet.public-sn-1.id
   route_table_id = aws_route_table.main_route_table.id
 }
 
 resource "aws_route_table_association" "main_route_assoc_2" {
-  subnet_id      = aws_subnet.main_subnet_2.id
+  subnet_id      = aws_subnet.public-sn-2.id
   route_table_id = aws_route_table.main_route_table.id
 }
 
@@ -81,10 +74,19 @@ resource "aws_security_group" "eks_sg" {
   vpc_id = aws_vpc.main_vpc.id
 
   ingress {
-    from_port   = 0
-    to_port     = 65535
+    description = "Allow SSH from my IP"
+    from_port   = 22
+    to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = ["${chomp(data.http.my_ip.response_body)}/32"]
+  }
+
+  ingress {
+    description  = "Allow MongoDB access from my IP"
+    from_port    = 27017
+    to_port      = 27017
+    protocol     = "tcp"
+    cidr_blocks  = ["${chomp(data.http.my_ip.response_body)}/32"]
   }
 
   egress {
@@ -171,7 +173,7 @@ resource "aws_eks_cluster" "eks_cluster" {
   role_arn = aws_iam_role.eks_role.arn
 
   vpc_config {
-    subnet_ids = [aws_subnet.main_subnet_1.id, aws_subnet.main_subnet_2.id]
+    subnet_ids = [aws_subnet.public-sn-1.id, aws_subnet.public-sn-2.id]
   }
 
   depends_on = [aws_iam_role.eks_role]
@@ -187,7 +189,7 @@ resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
 resource "aws_eks_node_group" "eks_nodes" {
   cluster_name    = aws_eks_cluster.eks_cluster.name
   node_role_arn   = aws_iam_role.eks_node_role.arn
-  subnet_ids      = [aws_subnet.main_subnet_1.id, aws_subnet.main_subnet_2.id]
+  subnet_ids      = [aws_subnet.public-sn-1.id, aws_subnet.public-sn-2.id]
   instance_types  = ["t3.medium"]
 
   scaling_config {
@@ -203,7 +205,7 @@ resource "aws_eks_node_group" "eks_nodes" {
 resource "aws_instance" "mongodb" {
   ami           = data.aws_ami.amazon_linux.id
   instance_type = var.instance_type
-  subnet_id     = aws_subnet.main_subnet_1.id
+  subnet_id     = aws_subnet.public-sn-1.id
   key_name      = var.key_name
   security_groups = [aws_security_group.mongo_sg.id]
 
